@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Enlaces personalizados · Primera Comunión de Briana</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fuentes.css">
+<style>
+/*
+  VOZ: herramienta práctica y tranquila para los papás.
+  IDEA: una libreta de invitados que entrega un enlace por familia.
+  IMAGEN: la tarjeta del enlace listo para enviar.
+  COLOR Y LETRA: los mismos de la invitación · Cormorant + Jost.
+  DISEÑO: una columna; formulario arriba, resultado debajo, lista de enlaces creados.
+*/
+:root{color-scheme:light;--marfil:#FBF8F2;--papel:#FFFDF9;--oro:#B8955A;--oro-osc:#7E6230;--tinta:#4A3F33;--suave:#6B5D4D;--beige:#E3D4BB}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--marfil);color:var(--tinta);font:16px/1.55 'Jost',system-ui,sans-serif;font-variant-numeric:lining-nums}
+.caja{max-width:560px;margin:0 auto;padding:36px 20px 60px}
+h1{margin:0;font:600 36px/1.1 'Cormorant Garamond',serif;text-wrap:balance}
+.intro{margin:8px 0 24px;color:var(--suave)}
+form,.resultado,.lista{background:var(--papel);border:1px solid #EFE3CF;border-radius:20px;padding:22px}
+label{display:grid;gap:6px;margin-bottom:16px;font-weight:600;font-size:15px}
+input{font:16px 'Jost',sans-serif;padding:12px 14px;border:1px solid var(--beige);border-radius:12px;background:#fff;color:var(--tinta);width:100%}
+input:focus-visible{outline:2px solid var(--oro);outline-offset:1px}
+.ayuda{font-weight:400;color:var(--suave);font-size:14px}
+button,.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 22px;border:0;border-radius:999px;background:var(--oro);color:#fff;font:600 15px 'Jost',sans-serif;cursor:pointer;text-decoration:none}
+button.sec,.btn.sec{background:#fff;color:var(--oro-osc);border:1px solid var(--beige)}
+button:focus-visible,.btn:focus-visible{outline:2px solid var(--oro-osc);outline-offset:2px}
+.resultado{margin-top:18px}
+.enlace{padding:12px 14px;border-radius:12px;background:#F6EFE3;font-size:14px;overflow-wrap:anywhere}
+.acciones{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.estado{margin:10px 0 0;font-size:14px;color:var(--oro-osc)}
+.lista{margin-top:18px}
+.lista h2{margin:0 0 10px;font:600 24px 'Cormorant Garamond',serif}
+.lista ul{list-style:none;margin:0;padding:0}
+.lista li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #F0E7D8}
+.lista li span{font-size:15px}
+.lista li button{min-height:40px;padding:0 14px;font-size:14px}
+.vacio{color:var(--suave);font-size:14px;margin:0}
+</style>
+</head>
+<body>
+<div class="caja">
+  <h1>Enlaces personalizados</h1>
+  <p class="intro">Crea un enlace para cada familia. Al abrirlo, la invitación mostrará su nombre en el sobre y los pases que les reservaron.</p>
+
+  <form id="form">
+    <label>Nombre del invitado o familia
+      <input id="nombre" required placeholder="Ej.: Familia Ramirez Atencia">
+    </label>
+    <label>Pases reservados
+      <input id="pases" type="number" min="1" max="20" value="2" inputmode="numeric">
+    </label>
+    <label>Dirección de la invitación
+      <span class="ayuda">Se completa sola cuando esta página está publicada. Cámbiala solo si usas otro dominio.</span>
+      <input id="base" type="url">
+    </label>
+    <button type="submit">Crear enlace</button>
+  </form>
+
+  <div class="resultado" id="resultado" hidden>
+    <div class="enlace" id="enlace"></div>
+    <div class="acciones">
+      <button type="button" id="copiar">Copiar enlace</button>
+      <a class="btn sec" id="wa" target="_blank" rel="noopener">Enviar por WhatsApp</a>
+      <a class="btn sec" id="ver" target="_blank" rel="noopener">Ver invitación</a>
+    </div>
+    <p class="estado" id="estado" role="status"></p>
+  </div>
+
+  <div class="lista">
+    <h2>Enlaces creados en este equipo</h2>
+    <ul id="lista"></ul>
+    <p class="vacio" id="vacio">Aún no has creado enlaces.</p>
+  </div>
+</div>
+<script>
+{
+  const $ = (s) => document.querySelector(s);
+  const base = $('#base');
+  base.value = location.href.replace(/generador\.html.*$/, '').replace(/[?#].*$/, '');
+  const codificar = (t) => btoa(String.fromCharCode(...new TextEncoder().encode(t))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  let guardados = [];
+  try { guardados = JSON.parse(localStorage.getItem('enlacesComunion') || '[]'); } catch (e) { guardados = []; }
+  function guardar() { try { localStorage.setItem('enlacesComunion', JSON.stringify(guardados)); } catch (e) {} }
+  function crear(nombre, pases) {
+    const b = base.value.trim().replace(/\/?$/, '/');
+    return `${b}?i=${codificar(`${nombre}|${pases}`)}`;
+  }
+  function mostrar(nombre, pases, url) {
+    $('#enlace').textContent = url;
+    $('#ver').href = url;
+    const msg = `¡Hola, ${nombre}! Con mucho cariño te comparto la invitación a la Primera Comunión de Briana:\n${url}`;
+    $('#wa').href = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+    $('#estado').textContent = '';
+    $('#resultado').hidden = false;
+  }
+  function pintar() {
+    const ul = $('#lista'); ul.innerHTML = '';
+    $('#vacio').hidden = guardados.length > 0;
+    guardados.forEach((g) => {
+      const li = document.createElement('li');
+      const s = document.createElement('span'); s.textContent = `${g.nombre} · ${g.pases} ${g.pases == 1 ? 'pase' : 'pases'}`;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'sec'; b.textContent = 'Usar';
+      b.addEventListener('click', () => mostrar(g.nombre, g.pases, crear(g.nombre, g.pases)));
+      li.append(s, b); ul.appendChild(li);
+    });
+  }
+  $('#form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const nombre = $('#nombre').value.trim();
+    const pases = Math.max(1, parseInt($('#pases').value, 10) || 1);
+    if (!nombre) { $('#nombre').focus(); return; }
+    const url = crear(nombre, pases);
+    mostrar(nombre, pases, url);
+    guardados = guardados.filter((g) => g.nombre !== nombre);
+    guardados.unshift({ nombre, pases });
+    guardar(); pintar();
+  });
+  $('#copiar').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('#enlace').textContent); $('#estado').textContent = 'Enlace copiado.'; }
+    catch (e) { $('#estado').textContent = 'No se pudo copiar automáticamente: mantén presionado el enlace para copiarlo.'; }
+  });
+  pintar();
+}
+</script>
+</body>
+</html>
